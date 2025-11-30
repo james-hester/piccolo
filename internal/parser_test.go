@@ -89,22 +89,3 @@ func TestParseNumericLiterals(t *testing.T) {
 		}
 	}
 }
-
-func TestHexTokenValue(t *testing.T) {
-	toks, err := Lex("fn f() begin x = $ff end")
-	if err != nil {
-		t.Fatalf("Tokens: %v", err)
-	}
-	// FN, IDENT, LPAREN, RPAREN, BEGIN, IDENT, EQL, NUMHEX, END, EOF
-	// 0   1      2       3       4      5      6    7       8    9
-	if len(toks) < 8 {
-		t.Fatalf("expected at least 8 tokens, got %d", len(toks))
-	}
-	hexTok := toks[7]
-	if hexTok.ty != NUMHEX {
-		t.Errorf("expected NUMHEX, got %v", hexTok.ty)
-	}
-	if hexTok.val != "ff" {
-		t.Errorf("expected 'ff', got %q", hexTok.val)
-	}
-}

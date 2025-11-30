@@ -14,28 +14,8 @@ Piccolo is meant to be more approachable than PIC assembly in several ways:
 3a. IDE niceties such as go-to-definition and
 3b. more advanced error checking than pic-as.
 
-Piccolo features an approach to memory inspired by IBM's Commercial Translator (COMTRAN), a predecessor of COBOL designed in the 1950s for business data processing on IBM 1401 mainframes.
-COMTRAN, like assembly language, didn't have any provisions for "automatic variables"; all names identified fixed memory locations.
-Despite this, COMTRAN provided a remarkably high level programming experience,
-featuring a hierarchy for data fields and a set of features for describing
-data that provide something like compound data types.
-
 Setup
 -----
 
 go install golang.org/x/tools/cmd/stringer@latest
-
-
-Scope
------
-
-This example Piccolo program shows every feature Piccolo currently implements.
-Piccolo will compile this program into a .hex file that can be flashed to a PIC16F1776 microcontroller.
-
-```
-fn function-name() begin -- function definition, comments
-  w = 5 -- MOVLW, decimal literal
-  return -- RETURN
-end
-```
 
