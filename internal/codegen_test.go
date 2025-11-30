@@ -43,6 +43,7 @@ end
 	}
 
 	expected := []string{
+		"main:",
 		"ADDWF f,0",
 		"ADDWF f,1",
 		"ADDFSR 0,5",
