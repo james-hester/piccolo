@@ -1,12 +1,18 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "go generate",
-            "type": "shell",
-            "command": "go generate ./...",
-            "group": "build",
-            "problemMatcher": []
-        }
-    ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "go generate",
+			"type": "shell",
+			"command": "go generate ./...",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "test coverage",
+			"type": "shell",
+			"command": "go test -coverprofile=coverage.out ./...",
+			"group": "test"
+		}
+	]
 }
