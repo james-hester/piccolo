@@ -1,0 +1,252 @@
+Piccolo statements
+---
+
+This file relates a PIC16 assembly mnemonic on the first line
+to a Piccolo statement on the second or following lines.
+---
+
+ADDWF f,1
+f += w
+
+ADDWF f,0
+w += f
+
+ADDWFC f,1
+f += w + c
+
+ADDWFC f,0
+w += f + c
+
+ANDWF f,0
+w &= f
+
+ANDWF f,1
+f &= w
+
+ASRF f,1
+f >>= 1
+
+ASRF f,0
+w = f >> 1
+
+LSLF f,1
+f <<= 1
+
+LSLF f,0
+w = f << 1
+
+LSRF f,1
+f >>= 1
+
+LSRF f,0
+w = f >> 1
+
+CLRF f
+f = 0
+
+CLRW
+w = 0
+
+COMF f,1
+f = not f
+
+COMF f,0
+w = not f
+
+DECF f,1
+f--
+
+DECF f,0
+w = f - 1
+
+INCF f,1
+f++
+
+INCF f,0
+w = f + 1
+
+IORWF f,1
+f |= w
+
+IORWF f,0
+w |= f
+
+MOVF f,1
+f = f // (updates Z flag)
+
+MOVF f,0
+w = f
+
+MOVWF f
+f = w
+
+RLF f,1
+f <<<= 1
+
+RLF f,0
+w = f <<< 1
+
+RRF f,1
+f >>>= 1
+
+RRF f,0
+w = f >>> 1
+
+SUBWF f,1
+f -= w
+
+SUBWF f,0
+w = f - w
+
+SUBWFB f,1
+f -= w + c
+
+SUBWFB f,0
+w = f - w + c
+
+SWAPF f,1
+swap(f)
+
+SWAPF f,0
+w = swap(f)
+
+XORWF f,1
+f ^= w
+
+XORWF f,0
+w ^= f
+
+DECFSZ f,1
+if (f--) != 0 then <statement>
+
+DECFSZ f,0
+if (w = f - 1) != 0 then <statement>
+
+INCFSZ f,1
+if (f++) != 0 then <statement>
+
+INCFSZ f,0
+if (w = f + 1) != 0 then <statement>
+
+BCF f,b
+f[b] = 0
+
+BSF f,b
+f[b] = 1
+
+(Note: Piccolo uses the more familiar if-then construction for conditional code, and so the conditions in each instruction are inverted compared to skips. For example, for BTFSC, if the bit is set, the next instruction is skipped, so the Piccolo statement only executes the next instruction if the bit is clear.)
+
+BTFSC f,b
+if f[b] then <statement>
+
+BTFSS f,b
+if not f[b] then <statement>
+
+// Literal operations
+
+ADDLW k
+w += k
+
+ANDLW k
+w &= k
+
+IORLW k
+w |= k
+
+MOVLB k
+bsr = k
+
+MOVLP k
+pclath = k
+
+MOVLW k
+w = k
+
+SUBLW k
+w = k - w
+
+XORLW k
+w ^= k
+
+// Control operations
+
+BRA k
+goto k
+
+BRW
+pc += w
+
+(Note: Piccolo prefers kebab-case names, and doesn't even allow underscores in identifiers. My current thinking is that identifiers should match [A-Za-z][A-Za-z0-9-]*[A-Za-z0-9]*. Then, when translating to and from assembly, all hyphens would be replaced with underscores.)
+(Subnote: that regex is wrong, what I really mean is identifiers must not end in a hyphen)
+
+CALL function_name
+function-name()
+
+CALLW
+mem[w]()
+
+GOTO k
+goto k
+
+RETFIE
+retfie
+
+RETLW k
+return k
+
+RETURN
+return
+
+CLRWDT
+clrwdt
+
+NOP
+nop
+
+OPTION
+option = w
+
+RESET
+reset
+
+SLEEP
+sleep
+
+TRIS f
+trisf = w
+
+ADDFSR fsrn, k (-32 <= k <= 31)
+fsrn += k
+or fsrn -= k
+
+MOVIW ++fsrn
+w = mem[++fsrn]
+
+MOVIW --fsrn
+w = mem[--fsrn]
+
+MOVIW fsrn++
+w = mem[fsrn++]
+
+MOVIW fsrn--
+w = mem[fsrn--]
+
+MOVIW k[fsrn]
+w = mem[fsrn + k]
+
+MOVWI ++fsrn
+mem[++fsrn] = w
+
+MOVWI --fsrn
+mem[--fsrn] = w
+
+MOVWI fsrn++
+mem[fsrn++] = w
+
+MOVWI fsrn--
+mem[fsrn--] = w
+
+MOVWI k[fsrn]
+mem[fsrn + k] = w
+
+code: language=plaintext

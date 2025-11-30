@@ -1,0 +1,135 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Piccolo",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#punctuation"
+		},
+		{
+			"include": "#identifiers"
+		}
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.double-slash.piccolo",
+					"match": "//.*$"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.piccolo",
+					"match": "(?i)\\b(if|then|return|fn|begin|end|at)\\b"
+				},
+				{
+					"name": "keyword.other.section.piccolo",
+					"match": "(?i)\\b(section)\\b"
+				},
+				{
+					"name": "keyword.other.section-name.piccolo",
+					"match": "(?i)\\b(configuration|constants|data|program)\\b"
+				},
+				{
+					"name": "storage.modifier.piccolo",
+					"match": "(?i)\\b(common|banked)\\b"
+				},
+				{
+					"name": "storage.type.piccolo",
+					"match": "(?i)\\b(i8)\\b"
+				}
+			]
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "constant.numeric.hex.piccolo",
+					"match": "\\$[0-9a-fA-F_]+"
+				},
+				{
+					"name": "constant.numeric.binary.piccolo",
+					"match": "%[01_]+"
+				},
+				{
+					"name": "constant.numeric.decimal.piccolo",
+					"match": "\\b[0-9_]+\\b"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.assignment.piccolo",
+					"match": "(\\+=|-=|&=|\\|=|\\^=|=)"
+				},
+				{
+					"name": "keyword.operator.comparison.piccolo",
+					"match": "(!=)"
+				},
+				{
+					"name": "keyword.operator.arithmetic.piccolo",
+					"match": "(\\+\\+|--)"
+				},
+				{
+					"name": "keyword.operator.logical.piccolo",
+					"match": "(?i)\\b(not)\\b"
+				}
+			]
+		},
+		"punctuation": {
+			"patterns": [
+				{
+					"name": "punctuation.section.brackets.begin.piccolo",
+					"match": "\\["
+				},
+				{
+					"name": "punctuation.section.brackets.end.piccolo",
+					"match": "\\]"
+				},
+				{
+					"name": "punctuation.section.parens.begin.piccolo",
+					"match": "\\("
+				},
+				{
+					"name": "punctuation.section.parens.end.piccolo",
+					"match": "\\)"
+				},
+				{
+					"name": "punctuation.separator.piccolo",
+					"match": ":"
+				}
+			]
+		},
+		"identifiers": {
+			"patterns": [
+				{
+					"match": "\\b([a-zA-Z][a-zA-Z0-9-]*)\\s*(?=\\()",
+					"name": "entity.name.function.piccolo"
+				},
+				{
+					"match": "\\b([a-zA-Z][a-zA-Z0-9-]*)\\s*(?=:)",
+					"name": "entity.name.label.piccolo"
+				},
+				{
+					"match": "\\b([a-zA-Z][a-zA-Z0-9-]*)\\b",
+					"name": "variable.other.piccolo"
+				}
+			]
+		}
+	},
+	"scopeName": "source.piccolo"
+}

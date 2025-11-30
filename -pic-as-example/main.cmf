@@ -1,0 +1,388 @@
+%CMF
+# %PSECTS Section
+# For each object file, details of its psects are enumerated here.
+# The begining of the section is indicated by %PSECTS.  The first
+# line indicates the name of the first object file, e.g.
+#    $foo.obj
+# Each line that follows describes a psect in that object file, until
+# the next object file.  The lines that describe a psect have the
+# format:
+#    <psect name> <class name> <space> <link address> <load addresses> <length> <delta> <reloc>
+# All addresses and the length are given in unqualified hexadecimal
+# in delta units.  Any other numeric values are decimal.
+%PSECTS
+$main.o
+StartCode CODE 0 763 763 27 2 1
+Isr_Vec CODE 0 78A 78A 27 2 1
+Por_Vec CODE 0 761 761 2 2 1
+Isr_Data COMMON 1 70 70 8 1 1
+MainCode CODE 0 7B1 7B1 4F 2 1
+MainData RAM 1 20 20 4 1 1
+config CONFIG 4 8007 8007 2 2 1
+# %UNUSED Section
+# This section enumerates the unused ranges of each CLASS. Each entry
+# is described on a single line as follows:
+#    <class name> <range> <delta>
+# Addresses given in the range are in hexadecimal and units of delta.
+%UNUSED
+RAM 24-6F 1
+RAM A0-EF 1
+RAM 120-16F 1
+RAM 1A0-1EF 1
+RAM 220-26F 1
+RAM 2A0-2EF 1
+RAM 320-36F 1
+RAM 3A0-3EF 1
+RAM 420-46F 1
+RAM 4A0-4EF 1
+RAM 520-56F 1
+RAM 5A0-5EF 1
+RAM 620-64F 1
+BANK0 24-6F 1
+BANK1 A0-EF 1
+BANK2 120-16F 1
+BANK3 1A0-1EF 1
+BANK4 220-26F 1
+BANK5 2A0-2EF 1
+BANK6 320-36F 1
+BANK7 3A0-3EF 1
+BANK8 420-46F 1
+BANK9 4A0-4EF 1
+CONST 0-760 2
+CONST 800-1FFF 2
+ENTRY 0-760 2
+ENTRY 800-1FFF 2
+IDLOC 8000-8003 2
+SFR10 500-51F 1
+SFR11 580-59F 1
+SFR12 600-61F 1
+SFR13 680-6EF 1
+SFR14 700-76F 1
+SFR15 780-7EF 1
+SFR16 800-86F 1
+SFR17 880-8EF 1
+SFR18 900-96F 1
+SFR19 980-9EF 1
+SFR20 A00-A6F 1
+SFR21 A80-AEF 1
+SFR22 B00-B6F 1
+SFR23 B80-BEF 1
+SFR24 C00-C6F 1
+SFR25 C80-CEF 1
+SFR26 D00-D6F 1
+SFR27 D80-DEF 1
+SFR28 E00-E6F 1
+SFR29 E80-EC1 1
+CODE 0-760 2
+CODE 800-1FFF 2
+SFR0 0-1F 1
+SFR1 80-9F 1
+SFR2 100-11F 1
+SFR3 180-19F 1
+SFR4 200-21F 1
+SFR5 280-29F 1
+SFR6 300-31F 1
+SFR7 380-39F 1
+SFR8 400-41F 1
+SFR9 480-49F 1
+BANK10 520-56F 1
+BANK11 5A0-5EF 1
+BANK12 620-64F 1
+BIGRAM 2000-23EF 1
+COMMON 78-7F 1
+STRCODE 0-760 2
+STRCODE 800-1FFF 2
+STRING 0-760 2
+STRING 800-1FFF 2
+# %LINETAB Section
+# This section enumerates the file/line to address mappings.
+# The beginning of the section is indicated by %LINETAB.
+# The first line indicates the name of the first object file, e.g.
+#   $foo.obj
+# Each line that follows describes a single mapping until the next
+# object file.  Mappings have the following format:
+#    <address> <psect name> <class name> ><line number>:<file name>
+# The address is absolute and given given in unqualified hex 
+# in delta units of the psect. All mappings within an object file
+# are in ascending order of addresses.
+# All other numeric values are in decimal.
+%LINETAB
+$main.o
+7B1 MainCode CODE >233:/Users/james/src/piccolo/main.S
+7B2 MainCode CODE >234:/Users/james/src/piccolo/main.S
+7B3 MainCode CODE >235:/Users/james/src/piccolo/main.S
+7B4 MainCode CODE >236:/Users/james/src/piccolo/main.S
+7B5 MainCode CODE >237:/Users/james/src/piccolo/main.S
+7B6 MainCode CODE >242:/Users/james/src/piccolo/main.S
+7B7 MainCode CODE >243:/Users/james/src/piccolo/main.S
+7B8 MainCode CODE >244:/Users/james/src/piccolo/main.S
+7B9 MainCode CODE >245:/Users/james/src/piccolo/main.S
+7BA MainCode CODE >246:/Users/james/src/piccolo/main.S
+7BB MainCode CODE >250:/Users/james/src/piccolo/main.S
+7BC MainCode CODE >251:/Users/james/src/piccolo/main.S
+7BD MainCode CODE >252:/Users/james/src/piccolo/main.S
+7BE MainCode CODE >253:/Users/james/src/piccolo/main.S
+7BF MainCode CODE >254:/Users/james/src/piccolo/main.S
+7C0 MainCode CODE >255:/Users/james/src/piccolo/main.S
+7C1 MainCode CODE >256:/Users/james/src/piccolo/main.S
+7C2 MainCode CODE >257:/Users/james/src/piccolo/main.S
+7C3 MainCode CODE >258:/Users/james/src/piccolo/main.S
+7C4 MainCode CODE >259:/Users/james/src/piccolo/main.S
+7C5 MainCode CODE >260:/Users/james/src/piccolo/main.S
+7C6 MainCode CODE >261:/Users/james/src/piccolo/main.S
+7C7 MainCode CODE >262:/Users/james/src/piccolo/main.S
+7C8 MainCode CODE >263:/Users/james/src/piccolo/main.S
+7C9 MainCode CODE >264:/Users/james/src/piccolo/main.S
+7CA MainCode CODE >265:/Users/james/src/piccolo/main.S
+7CB MainCode CODE >267:/Users/james/src/piccolo/main.S
+7CC MainCode CODE >268:/Users/james/src/piccolo/main.S
+7CD MainCode CODE >269:/Users/james/src/piccolo/main.S
+7CE MainCode CODE >270:/Users/james/src/piccolo/main.S
+7CF MainCode CODE >274:/Users/james/src/piccolo/main.S
+7D0 MainCode CODE >275:/Users/james/src/piccolo/main.S
+7D1 MainCode CODE >276:/Users/james/src/piccolo/main.S
+7D2 MainCode CODE >277:/Users/james/src/piccolo/main.S
+7D3 MainCode CODE >278:/Users/james/src/piccolo/main.S
+7D4 MainCode CODE >279:/Users/james/src/piccolo/main.S
+7D5 MainCode CODE >280:/Users/james/src/piccolo/main.S
+7D6 MainCode CODE >281:/Users/james/src/piccolo/main.S
+7D7 MainCode CODE >282:/Users/james/src/piccolo/main.S
+7D8 MainCode CODE >283:/Users/james/src/piccolo/main.S
+7D9 MainCode CODE >284:/Users/james/src/piccolo/main.S
+7DA MainCode CODE >285:/Users/james/src/piccolo/main.S
+7DB MainCode CODE >287:/Users/james/src/piccolo/main.S
+7DC MainCode CODE >288:/Users/james/src/piccolo/main.S
+7DD MainCode CODE >289:/Users/james/src/piccolo/main.S
+7DE MainCode CODE >290:/Users/james/src/piccolo/main.S
+7DF MainCode CODE >291:/Users/james/src/piccolo/main.S
+7E0 MainCode CODE >292:/Users/james/src/piccolo/main.S
+7E1 MainCode CODE >293:/Users/james/src/piccolo/main.S
+7E2 MainCode CODE >294:/Users/james/src/piccolo/main.S
+7E3 MainCode CODE >296:/Users/james/src/piccolo/main.S
+7E4 MainCode CODE >297:/Users/james/src/piccolo/main.S
+7E5 MainCode CODE >298:/Users/james/src/piccolo/main.S
+7E6 MainCode CODE >299:/Users/james/src/piccolo/main.S
+7E7 MainCode CODE >309:/Users/james/src/piccolo/main.S
+7E8 MainCode CODE >310:/Users/james/src/piccolo/main.S
+7E9 MainCode CODE >311:/Users/james/src/piccolo/main.S
+7EA MainCode CODE >312:/Users/james/src/piccolo/main.S
+7EB MainCode CODE >313:/Users/james/src/piccolo/main.S
+7EC MainCode CODE >314:/Users/james/src/piccolo/main.S
+7ED MainCode CODE >315:/Users/james/src/piccolo/main.S
+7EE MainCode CODE >316:/Users/james/src/piccolo/main.S
+7EF MainCode CODE >317:/Users/james/src/piccolo/main.S
+7F0 MainCode CODE >320:/Users/james/src/piccolo/main.S
+7F1 MainCode CODE >321:/Users/james/src/piccolo/main.S
+7F2 MainCode CODE >322:/Users/james/src/piccolo/main.S
+7F3 MainCode CODE >323:/Users/james/src/piccolo/main.S
+7F4 MainCode CODE >324:/Users/james/src/piccolo/main.S
+7F5 MainCode CODE >325:/Users/james/src/piccolo/main.S
+7F6 MainCode CODE >326:/Users/james/src/piccolo/main.S
+7F7 MainCode CODE >327:/Users/james/src/piccolo/main.S
+7F8 MainCode CODE >328:/Users/james/src/piccolo/main.S
+7F9 MainCode CODE >329:/Users/james/src/piccolo/main.S
+7FA MainCode CODE >330:/Users/james/src/piccolo/main.S
+7FB MainCode CODE >331:/Users/james/src/piccolo/main.S
+7FC MainCode CODE >332:/Users/james/src/piccolo/main.S
+7FD MainCode CODE >333:/Users/james/src/piccolo/main.S
+7FE MainCode CODE >334:/Users/james/src/piccolo/main.S
+7FF MainCode CODE >335:/Users/james/src/piccolo/main.S
+763 StartCode CODE >160:/Users/james/src/piccolo/main.S
+764 StartCode CODE >161:/Users/james/src/piccolo/main.S
+765 StartCode CODE >162:/Users/james/src/piccolo/main.S
+766 StartCode CODE >163:/Users/james/src/piccolo/main.S
+767 StartCode CODE >164:/Users/james/src/piccolo/main.S
+768 StartCode CODE >165:/Users/james/src/piccolo/main.S
+769 StartCode CODE >167:/Users/james/src/piccolo/main.S
+76A StartCode CODE >168:/Users/james/src/piccolo/main.S
+76B StartCode CODE >169:/Users/james/src/piccolo/main.S
+76C StartCode CODE >171:/Users/james/src/piccolo/main.S
+76D StartCode CODE >172:/Users/james/src/piccolo/main.S
+76E StartCode CODE >173:/Users/james/src/piccolo/main.S
+76F StartCode CODE >177:/Users/james/src/piccolo/main.S
+770 StartCode CODE >178:/Users/james/src/piccolo/main.S
+771 StartCode CODE >179:/Users/james/src/piccolo/main.S
+772 StartCode CODE >180:/Users/james/src/piccolo/main.S
+773 StartCode CODE >181:/Users/james/src/piccolo/main.S
+774 StartCode CODE >182:/Users/james/src/piccolo/main.S
+775 StartCode CODE >183:/Users/james/src/piccolo/main.S
+776 StartCode CODE >184:/Users/james/src/piccolo/main.S
+777 StartCode CODE >185:/Users/james/src/piccolo/main.S
+778 StartCode CODE >186:/Users/james/src/piccolo/main.S
+779 StartCode CODE >187:/Users/james/src/piccolo/main.S
+77A StartCode CODE >188:/Users/james/src/piccolo/main.S
+77B StartCode CODE >189:/Users/james/src/piccolo/main.S
+77C StartCode CODE >190:/Users/james/src/piccolo/main.S
+77D StartCode CODE >191:/Users/james/src/piccolo/main.S
+77E StartCode CODE >196:/Users/james/src/piccolo/main.S
+77F StartCode CODE >197:/Users/james/src/piccolo/main.S
+780 StartCode CODE >198:/Users/james/src/piccolo/main.S
+781 StartCode CODE >199:/Users/james/src/piccolo/main.S
+782 StartCode CODE >200:/Users/james/src/piccolo/main.S
+783 StartCode CODE >201:/Users/james/src/piccolo/main.S
+784 StartCode CODE >202:/Users/james/src/piccolo/main.S
+785 StartCode CODE >203:/Users/james/src/piccolo/main.S
+786 StartCode CODE >204:/Users/james/src/piccolo/main.S
+787 StartCode CODE >208:/Users/james/src/piccolo/main.S
+788 StartCode CODE >210:/Users/james/src/piccolo/main.S
+789 StartCode CODE >211:/Users/james/src/piccolo/main.S
+78A Isr_Vec CODE >109:/Users/james/src/piccolo/main.S
+78B Isr_Vec CODE >110:/Users/james/src/piccolo/main.S
+78C Isr_Vec CODE >111:/Users/james/src/piccolo/main.S
+78D Isr_Vec CODE >112:/Users/james/src/piccolo/main.S
+78E Isr_Vec CODE >113:/Users/james/src/piccolo/main.S
+78F Isr_Vec CODE >115:/Users/james/src/piccolo/main.S
+790 Isr_Vec CODE >116:/Users/james/src/piccolo/main.S
+791 Isr_Vec CODE >117:/Users/james/src/piccolo/main.S
+792 Isr_Vec CODE >118:/Users/james/src/piccolo/main.S
+793 Isr_Vec CODE >119:/Users/james/src/piccolo/main.S
+794 Isr_Vec CODE >120:/Users/james/src/piccolo/main.S
+795 Isr_Vec CODE >121:/Users/james/src/piccolo/main.S
+796 Isr_Vec CODE >122:/Users/james/src/piccolo/main.S
+797 Isr_Vec CODE >124:/Users/james/src/piccolo/main.S
+798 Isr_Vec CODE >125:/Users/james/src/piccolo/main.S
+799 Isr_Vec CODE >126:/Users/james/src/piccolo/main.S
+79A Isr_Vec CODE >127:/Users/james/src/piccolo/main.S
+79B Isr_Vec CODE >128:/Users/james/src/piccolo/main.S
+79C Isr_Vec CODE >129:/Users/james/src/piccolo/main.S
+79D Isr_Vec CODE >130:/Users/james/src/piccolo/main.S
+79E Isr_Vec CODE >131:/Users/james/src/piccolo/main.S
+79F Isr_Vec CODE >132:/Users/james/src/piccolo/main.S
+7A0 Isr_Vec CODE >133:/Users/james/src/piccolo/main.S
+7A1 Isr_Vec CODE >134:/Users/james/src/piccolo/main.S
+7A2 Isr_Vec CODE >136:/Users/james/src/piccolo/main.S
+7A3 Isr_Vec CODE >137:/Users/james/src/piccolo/main.S
+7A4 Isr_Vec CODE >138:/Users/james/src/piccolo/main.S
+7A5 Isr_Vec CODE >139:/Users/james/src/piccolo/main.S
+7A6 Isr_Vec CODE >140:/Users/james/src/piccolo/main.S
+7A7 Isr_Vec CODE >141:/Users/james/src/piccolo/main.S
+7A8 Isr_Vec CODE >142:/Users/james/src/piccolo/main.S
+7A9 Isr_Vec CODE >143:/Users/james/src/piccolo/main.S
+7AA Isr_Vec CODE >145:/Users/james/src/piccolo/main.S
+7AB Isr_Vec CODE >146:/Users/james/src/piccolo/main.S
+7AC Isr_Vec CODE >147:/Users/james/src/piccolo/main.S
+7AD Isr_Vec CODE >148:/Users/james/src/piccolo/main.S
+7AE Isr_Vec CODE >149:/Users/james/src/piccolo/main.S
+7AF Isr_Vec CODE >150:/Users/james/src/piccolo/main.S
+7B0 Isr_Vec CODE >151:/Users/james/src/piccolo/main.S
+761 Por_Vec CODE >89:/Users/james/src/piccolo/main.S
+762 Por_Vec CODE >90:/Users/james/src/piccolo/main.S
+# %SYMTAB Section
+# An enumeration of all symbols in the program.
+# The beginning of the section is indicated by %SYMTAB.
+# Each line describes a single symbol as follows:
+#    <label> <value> [-]<load-adj> <class> <space> <psect> <file-name>
+# The value and load-adj are both in unqualified hexadecimal.
+# All other numeric values are in decimal.  The load-adj is the
+# quantity one needs to add to the symbol value in order to obtain the load
+# address of the symbol.  This value may be signed. If the symbol
+# was defined in a psect then <psect> will be "-". File-name
+# is the name of the object file in which the symbol was defined.
+%SYMTAB
+__Hspace_0 800 0 ABS 0 - -
+__Hspace_1 78 0 ABS 0 - -
+__Hspace_4 10010 0 ABS 0 - -
+__Hudata_bank0 0 0 ABS 0 udata_bank0 -
+__Hudata_bank1 0 0 ABS 0 udata_bank1 -
+__Hudata_bank2 0 0 ABS 0 udata_bank2 -
+__Hudata_bank3 0 0 ABS 0 udata_bank3 -
+__Hudata_bank4 0 0 ABS 0 udata_bank4 -
+__Hudata_bank5 0 0 ABS 0 udata_bank5 -
+__Hudata_bank6 0 0 ABS 0 udata_bank6 -
+__Hudata_bank7 0 0 ABS 0 udata_bank7 -
+__Hudata_bank8 0 0 ABS 0 udata_bank8 -
+__Hudata_bank9 0 0 ABS 0 udata_bank9 -
+__L__absolute__ 0 0 ABS 0 __absolute__ -
+Delay 21 0 RAM 1 MainData main.o
+Start EC6 0 CODE 0 StartCode main.o
+__LIsr_Vec 0 0 ABS 0 Isr_Vec -
+resetVec EC2 0 CODE 0 Por_Vec main.o
+PCLATH_Save 72 0 COMMON 1 Isr_Data main.o
+__LPor_Vec 0 0 ABS 0 Por_Vec -
+__HStartCode 0 0 ABS 0 StartCode -
+__LStartCode 0 0 ABS 0 StartCode -
+__Hudata_bank10 0 0 ABS 0 udata_bank10 -
+__Hudata_bank11 0 0 ABS 0 udata_bank11 -
+__Hudata_bank12 0 0 ABS 0 udata_bank12 -
+__Hudata 0 0 ABS 0 udata -
+__HIsr_Vec 0 0 ABS 0 Isr_Vec -
+Segments 73 0 COMMON 1 Isr_Data main.o
+__Hconfig 10012 0 CONFIG 4 config -
+__Ludata 0 0 ABS 0 udata -
+__Hcode 0 0 ABS 0 code -
+__Hdata 0 0 ABS 0 data -
+__Lcode 0 0 ABS 0 code -
+__Ldata 0 0 ABS 0 data -
+__HPor_Vec 0 0 ABS 0 Por_Vec -
+Tick 77 0 COMMON 1 Isr_Data main.o
+__S0 800 0 ABS 0 - -
+__S1 78 0 ABS 0 - -
+main F62 0 CODE 0 MainCode main.o
+__LIsr_Data 0 0 ABS 0 Isr_Data -
+__Ludata_bank10 0 0 ABS 0 udata_bank10 -
+__Ludata_bank11 0 0 ABS 0 udata_bank11 -
+__Ludata_bank12 0 0 ABS 0 udata_bank12 -
+WREG_Save 70 0 COMMON 1 Isr_Data main.o
+__Lconfig 0 0 CONFIG 4 config -
+__HIsr_Data 0 0 ABS 0 Isr_Data -
+__Lspace_0 0 0 ABS 0 - -
+__Lspace_1 0 0 ABS 0 - -
+__Lspace_4 0 0 ABS 0 - -
+__LMainCode 0 0 ABS 0 MainCode -
+__LMainData 0 0 ABS 0 MainData -
+IsrVec F14 0 CODE 0 Isr_Vec main.o
+__Ludata_bank0 0 0 ABS 0 udata_bank0 -
+__Ludata_bank1 0 0 ABS 0 udata_bank1 -
+__Ludata_bank2 0 0 ABS 0 udata_bank2 -
+__Ludata_bank3 0 0 ABS 0 udata_bank3 -
+__Ludata_bank4 0 0 ABS 0 udata_bank4 -
+__Ludata_bank5 0 0 ABS 0 udata_bank5 -
+__Ludata_bank6 0 0 ABS 0 udata_bank6 -
+__Ludata_bank7 0 0 ABS 0 udata_bank7 -
+__Ludata_bank8 0 0 ABS 0 udata_bank8 -
+__Ludata_bank9 0 0 ABS 0 udata_bank9 -
+__H__absolute__ 0 0 ABS 0 __absolute__ -
+DecimalPosition 20 0 RAM 1 MainData main.o
+__HMainCode 0 0 ABS 0 MainCode -
+__HMainData 0 0 ABS 0 MainData -
+__Hudata_shr 0 0 ABS 0 udata_shr -
+STATUS_Save 71 0 COMMON 1 Isr_Data main.o
+__Ludata_shr 0 0 ABS 0 udata_shr -
+# %SPLITSTAB Section
+# This section enumerates all the psect splits performed by the assembler.
+# The beginning of the section is indicated by %SPLITSTAB.
+# Each line is a record a particular split, where the parent psect is on
+# the left and the child on the right.  Note that a child psect is always
+# split form the top of the parent psect. All splits from a given parent
+# are listed in the order in which they occurred.
+%SPLITSTAB
+# %DABS Section
+# This section contains a table of all usuage of the assember
+# directive DABS in the program. Each line has the following format:
+#   <name> <space> <address> <size>
+# If the DABS was originally labelled then that shall be <name>,
+# otherwise name will be "-".  The <space> number is in decimal.
+# <address> and <size> are in byte units as unqaulified hexadecimal
+%DABS
+# %SEGMENTS Section
+# This sections enumerates the segments of the program.  Each segment
+# is described on a single line as follows:
+#    <name> <space> <link address> <file address> <size> <delta>
+# Addresses and size are in unqualified hexadecimal.  The link address
+# and size are in units of delta. The file address is in units of bytes.
+# All other numeric quantities are in decimal.
+%SEGMENTS
+StartCode 0 763 EC6 27 2
+Isr_Vec 0 78A F14 27 2
+Por_Vec 0 761 EC2 2 2
+Isr_Data 1 70 70 8 1
+MainCode 0 7B1 F62 4F 2
+MainData 1 20 20 4 1
+# %NOTES Section
+# This section contains data of all the note-psects.  The beginning of the section
+# is indicated by %NOTES. The first line indicates the name and decimal
+# byte-length of the first note-psect, e.g.
+#   $codecov_info_hdr 16
+# Each line that follows contains the byte-data of the psect in hexadecimal as a
+# space-separated list. These lines are limited to 16 bytes of data.
+%NOTES

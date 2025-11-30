@@ -1,0 +1,59 @@
+// Piccolo EBNF Grammar
+// This file is meant to track the current state of the parser,
+// not to illustrate how the grammar will eventually look;
+// it may be too permissive or too strict for some productions.
+
+Program = Section*
+
+Section = SECTION (ConstantsSection | ConfigurationSection | DataSection | ProgramSection)
+
+ConstantsSection = CONSTANTS Constant*
+
+ConfigurationSection = CONFIGURATION ConfigItem*
+
+ConfigItem = IDENT[name] COLON Expr
+
+DataSection = DATA DataItem*
+
+DataItem = (COMMON | BANKED) COLON | VariableDecl
+
+VariableDecl = IDENT[name] I8
+
+ProgramSection = PROGRAM (Function | AtBlock)*
+
+Function = FN IDENT[name] LPAREN RPAREN BEGIN Stmt* END
+
+AtBlock = AT Expr BEGIN Stmt* END
+
+Stmt = Label | Assign | Call | Return | If
+
+Label = IDENT[name] COLON
+
+Assign = LHS AssignOp Expr
+
+LHS = IDENT[name] (LBRACK Expr RBRACK)?
+
+AssignOp = EQL | ADDEQL | SUBEQL | ANDEQL | OREQL | XOREQL
+
+Call = IDENT[name] LPAREN RPAREN
+
+Return = RETURN
+
+If = IF Expr THEN Stmt
+
+Constant = IDENT[name] COLON Expr (LBRACK SFRBit* RBRACK)?
+
+SFRBit = IDENT[bitName] COLON Expr
+
+Expr = BinaryExpr
+
+// Only NEQ is supported as a binary operator in expressions currently
+BinaryExpr = UnaryExpr (NEQ UnaryExpr)*
+
+UnaryExpr = NOT UnaryExpr | PostfixExpr
+
+PostfixExpr = PrimaryExpr (INC | DEC | LBRACK Expr RBRACK)*
+
+PrimaryExpr = IDENT[name] | Number | LPAREN Expr RPAREN
+
+Number = NUMDECIMAL[val] | NUMHEX[val] | NUMBINARY[val]

@@ -1,0 +1,30 @@
+section configuration
+  conf: $3F3F
+
+section constants
+
+md1con0: $315 [
+    en: 7
+    out: 5
+    opol: 4
+    bit: 0
+]
+
+section data
+common:
+  var1  i8
+banked:
+  var2  i8
+
+
+section program
+
+fn main() begin
+  md1con0[en] = 1
+next:
+  md1con0[bit] = 0
+end
+
+at $10 begin
+  main()
+end

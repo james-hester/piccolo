@@ -1,0 +1,14 @@
+Names without places
+---
+
+Programmers are familiar with the idea of keeping data in named variables:
+
+func main() {
+    var firstName string = "Alice"
+    var age int = 30
+    fmt.Println(firstName, age)
+}
+
+In this code, "firstName" identifies a string. This string is an abstract entity. Programmers know that "firstName" will be stored somewhere in a computer's memory, but the Go _compiler_, as opposed to the Go programming language, will decide exactly where. Even in programming languages that allow programmers to manage memory directly, such as C, the programmer still uses names to refer to data, and these names stand alone, floating in the ether; the link between names and the totality of memory is handled by the compiler and runtime system.
+
+IBM's COMTRAN language, developed in the 1950s and released in June of 1960, also featured named data and an abstraction over memory (or, in IBM's language, "storage"). 

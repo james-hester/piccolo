@@ -1,0 +1,41 @@
+Piccolo
+-------
+
+Piccolo is a programming language for 8-bit PIC microcontrollers.
+Unlike C, it is designed specifically for the PIC and requires no runtime;
+it could be considered a "high level assembly."
+Piccolo is meant to be more approachable than PIC assembly in several ways:
+1. Its orthogonal, Python-like syntax.
+2. Its simple compilation model; Piccolo is strictly a tool for "programming in the small" and will never support a linker, multi-file projects, etc. As Wirth wrote in "The Language PICL and its Implementation":
+
+> Programs for computers with 64 bytes of data and 2K of program storage are inherently short; their descriptions should therefore not be longwinded.
+
+3. Its tooling, providing
+3a. IDE niceties such as go-to-definition and
+3b. more advanced error checking than pic-as.
+
+Piccolo features an approach to memory inspired by IBM's Commercial Translator (COMTRAN), a predecessor of COBOL designed in the 1950s for business data processing on IBM 1401 mainframes.
+COMTRAN, like assembly language, didn't have any provisions for "automatic variables"; all names identified fixed memory locations.
+Despite this, COMTRAN provided a remarkably high level programming experience,
+featuring a hierarchy for data fields and a set of features for describing
+data that provide something like compound data types.
+
+Setup
+-----
+
+go install golang.org/x/tools/cmd/stringer@latest
+
+
+Scope
+-----
+
+This example Piccolo program shows every feature Piccolo currently implements.
+Piccolo will compile this program into a .hex file that can be flashed to a PIC16F1776 microcontroller.
+
+```
+fn function-name() begin -- function definition, comments
+  w = 5 -- MOVLW, decimal literal
+  return -- RETURN
+end
+```
+
