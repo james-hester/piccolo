@@ -11,6 +11,7 @@ type AssemblerContext struct {
 	Symbols     SymbolTable
 	CurrentBank int
 	Fixups      []Fixup
+	Config      map[int]uint16
 }
 
 // Fixup represents a location in the code that needs to be patched with a label address.
@@ -28,6 +29,7 @@ func NewAssemblerContext(syms SymbolTable) *AssemblerContext {
 	return &AssemblerContext{
 		Symbols:     syms,
 		CurrentBank: -1, // Unknown bank
+		Config:      make(map[int]uint16),
 	}
 }
 
@@ -67,13 +69,13 @@ func (ctx *AssemblerContext) AddFixup(label string, mask uint16) {
 }
 
 // Assemble converts a list of PicOp into machine code using the context.
-func Assemble(ops []PicOp, syms SymbolTable) ([]uint16, error) {
+func Assemble(ops []PicOp, syms SymbolTable) ([]uint16, map[int]uint16, error) {
 	ctx := NewAssemblerContext(syms)
 
 	// Pass 1: Emit code and collect fixups
 	for _, op := range ops {
 		if err := op.Encode(ctx); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -81,18 +83,18 @@ func Assemble(ops []PicOp, syms SymbolTable) ([]uint16, error) {
 	for _, fixup := range ctx.Fixups {
 		addr, ok := ctx.Symbols.GetAddress(fixup.Label)
 		if !ok {
-			return nil, fmt.Errorf("undefined label: %s", fixup.Label)
+			return nil, nil, fmt.Errorf("undefined label: %s", fixup.Label)
 		}
 		// Apply fixup
 		// We assume the word at Index has 0s where the address goes
 		ctx.Words[fixup.Index] |= (uint16(addr) & fixup.Mask)
 	}
 
-	return ctx.Words, nil
+	return ctx.Words, ctx.Config, nil
 }
 
 // WriteHex writes the machine code in Intel HEX format.
-func WriteHex(w io.Writer, words []uint16) error {
+func WriteHex(w io.Writer, words []uint16, config map[int]uint16) error {
 	// Intel HEX format
 	// :LLAAAATTDD...DDCC
 	// We write 16 bytes (8 words) per line usually.
@@ -126,6 +128,43 @@ func WriteHex(w io.Writer, words []uint16) error {
 		fmt.Fprintf(w, "%02X\n", checksum)
 
 		addr += len(chunk) * 2 // Address is in bytes
+	}
+
+	// Write configuration bits
+	if len(config) > 0 {
+		// We need to switch to extended linear address mode if address > 64KB
+		// Config words are usually at 0x8007 words -> 0x1000E bytes.
+		// 0x1000E is > 0xFFFF, so we need extended linear address record.
+		// Record type 04.
+		// Data is the upper 16 bits of the address.
+		// For 0x1000E, upper 16 bits is 0x0001.
+
+		// Emit Extended Linear Address Record
+		// :020000040001F9
+		fmt.Fprintf(w, ":020000040001F9\n")
+
+		for wordAddr, val := range config {
+			// wordAddr is e.g. 0x8007.
+			// byteAddr is 0x1000E.
+			// Since we set base to 0x10000 (via extended linear address),
+			// the offset is 0x000E.
+			byteAddr := (wordAddr * 2) & 0xFFFF
+
+			// Write one word record
+			byteCount := 2
+			recordType := 0
+			fmt.Fprintf(w, ":%02X%04X%02X", byteCount, byteAddr, recordType)
+
+			checksum := byteCount + (byteAddr >> 8) + (byteAddr & 0xFF) + recordType
+
+			low := val & 0xFF
+			high := (val >> 8) & 0xFF
+			fmt.Fprintf(w, "%02X%02X", low, high)
+			checksum += int(low) + int(high)
+
+			checksum = (^checksum + 1) & 0xFF
+			fmt.Fprintf(w, "%02X\n", checksum)
+		}
 	}
 
 	// EOF record
