@@ -52,7 +52,7 @@ func main() {
 		return
 	}
 
-	words, err := internal.Assemble(ops, syms)
+	words, config, err := internal.Assemble(ops, syms)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Assembly error: %v\n", err)
 		os.Exit(1)
@@ -66,7 +66,7 @@ func main() {
 	}
 	defer f.Close()
 
-	if err := internal.WriteHex(f, words); err != nil {
+	if err := internal.WriteHex(f, words, config); err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing hex file: %v\n", err)
 		os.Exit(1)
 	}

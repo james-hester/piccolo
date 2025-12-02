@@ -35,9 +35,30 @@ func Compile(prog Program) ([]PicOp, SymbolTable, error) {
 
 	c := &asmGen{prog: prog}
 	var ops []PicOp
+	var diagnostics DiagnosticList
 
 	// Configuration
-	// TODO: Emit configuration bits
+	// Map configuration names to addresses.
+	// Default mapping for PIC16F1xxx:
+	// CONFIG1: 0x8007
+	// CONFIG2: 0x8008
+	configMap := map[string]int{
+		"conf":  0x8007,
+		"conf1": 0x8007,
+		"conf2": 0x8008,
+	}
+
+	for name, val := range prog.Configuration {
+		if addr, ok := configMap[name]; ok {
+			ops = append(ops, ConfigOp{Address: addr, Value: val})
+		} else {
+			diagnostics = append(diagnostics, Diagnostic{
+				Code:    ErrUnknown,
+				Message: fmt.Sprintf("unknown configuration word: %s", name),
+				Range:   Range{}, // TODO: We don't have range info for config keys easily available here
+			})
+		}
+	}
 
 	// AtBlocks
 	for _, blk := range prog.AtBlocks {
@@ -45,7 +66,16 @@ func Compile(prog Program) ([]PicOp, SymbolTable, error) {
 		for _, stmt := range blk.Body {
 			compiled, err := c.compileStmt(stmt)
 			if err != nil {
-				return nil, nil, err
+				if d, ok := err.(Diagnostic); ok {
+					diagnostics = append(diagnostics, d)
+				} else {
+					diagnostics = append(diagnostics, Diagnostic{
+						Code:    ErrUnknown,
+						Message: err.Error(),
+						Range:   stmt.Position(),
+					})
+				}
+				continue
 			}
 			ops = append(ops, compiled...)
 		}
@@ -56,10 +86,23 @@ func Compile(prog Program) ([]PicOp, SymbolTable, error) {
 		for _, stmt := range fn.Body {
 			compiled, err := c.compileStmt(stmt)
 			if err != nil {
-				return nil, nil, err
+				if d, ok := err.(Diagnostic); ok {
+					diagnostics = append(diagnostics, d)
+				} else {
+					diagnostics = append(diagnostics, Diagnostic{
+						Code:    ErrUnknown,
+						Message: err.Error(),
+						Range:   stmt.Position(),
+					})
+				}
+				continue
 			}
 			ops = append(ops, compiled...)
 		}
+	}
+
+	if len(diagnostics) > 0 {
+		return nil, nil, diagnostics
 	}
 	return ops, syms, nil
 }
@@ -111,9 +154,13 @@ func (c *asmGen) compileStmt(stmt Stmt) ([]PicOp, error) {
 	case CallStmt:
 		return []PicOp{CallOp{Label: s.Name}}, nil
 	case LabelStmt:
-		return []PicOp{LabelOp(s)}, nil
+		return []PicOp{LabelOp{Name: s.Name}}, nil
 	default:
-		return nil, fmt.Errorf("unknown statement type: %T", stmt)
+		return nil, Diagnostic{
+			Code:    ErrUnknown,
+			Message: fmt.Sprintf("unknown statement type: %T", stmt),
+			Range:   stmt.Position(),
+		}
 	}
 }
 
@@ -183,7 +230,11 @@ func (c *asmGen) compileIf(s IfStmt) ([]PicOp, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported if condition: %v", cond)
+	return nil, Diagnostic{
+		Code:    ErrType,
+		Message: fmt.Sprintf("unsupported if condition: %v", cond),
+		Range:   s.Cond.Position(),
+	}
 }
 
 func (c *asmGen) compileAssign(s AssignStmt) ([]PicOp, error) {
@@ -207,13 +258,21 @@ func (c *asmGen) compileAssign(s AssignStmt) ([]PicOp, error) {
 				}
 			}
 		}
-		return nil, fmt.Errorf("unsupported assignment to index: %v", s)
+		return nil, Diagnostic{
+			Code:    ErrType,
+			Message: fmt.Sprintf("unsupported assignment to index: %v", s),
+			Range:   s.Position(),
+		}
 	}
 
 	// Handle Ident assignments
 	lhsName, ok := getIdent(lhsExpr)
 	if !ok {
-		return nil, fmt.Errorf("LHS must be identifier or index expression")
+		return nil, Diagnostic{
+			Code:    ErrType,
+			Message: "LHS must be identifier or index expression",
+			Range:   s.Lhs.Position(),
+		}
 	}
 
 	switch op {

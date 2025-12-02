@@ -79,11 +79,13 @@ func (l LabelStmt) String() string {
 type Stmt interface {
 	String() string
 	isStmt()
+	Position() Range
 }
 
 type Expr interface {
 	String() string
 	isExpr()
+	Position() Range
 }
 
 type Program struct {
@@ -100,113 +102,153 @@ type Variable struct {
 	Type    string // "i8" for now
 	Banked  bool   // true if banked, false if common
 	Address int    // Assigned address
+	Range   Range
 }
 
 type AtBlock struct {
 	Address int
 	Body    []Stmt
+	Range   Range
 }
 
 type SFR struct {
 	Address int
 	Bits    map[string]int
+	Range   Range
 }
 
 type Function struct {
-	Name string
-	Body []Stmt
+	Name  string
+	Body  []Stmt
+	Range Range
 }
 
 type CallStmt struct {
-	Name string
+	Name  string
+	Range Range
 }
 
-func (CallStmt) isStmt() {}
+func (CallStmt) isStmt()           {}
+func (s CallStmt) Position() Range { return s.Range }
 
 func (c CallStmt) String() string {
 	return fmt.Sprintf("call %s", c.Name)
 }
 
 type AssignStmt struct {
-	Lhs  Expr
-	Op   TTy
-	Expr Expr
+	Lhs   Expr
+	Op    TTy
+	Expr  Expr
+	Range Range
 }
 
-func (AssignStmt) isStmt() {}
+func (AssignStmt) isStmt()           {}
+func (s AssignStmt) Position() Range { return s.Range }
 
 type IfStmt struct {
-	Cond Expr
-	Then Stmt
+	Cond  Expr
+	Then  Stmt
+	Range Range
 }
 
-func (IfStmt) isStmt() {}
+func (IfStmt) isStmt()           {}
+func (s IfStmt) Position() Range { return s.Range }
 
-type ReturnStmt struct{}
+type ReturnStmt struct {
+	Range Range
+}
 
-func (ReturnStmt) isStmt() {}
+func (ReturnStmt) isStmt()           {}
+func (s ReturnStmt) Position() Range { return s.Range }
 
 type LabelStmt struct {
-	Name string
+	Name  string
+	Range Range
 }
 
-func (LabelStmt) isStmt() {}
+func (LabelStmt) isStmt()           {}
+func (s LabelStmt) Position() Range { return s.Range }
 
 type IdentExpr struct {
-	Name string
+	Name  string
+	Range Range
 }
 
-func (IdentExpr) isExpr() {}
+func (IdentExpr) isExpr()           {}
+func (e IdentExpr) Position() Range { return e.Range }
 
 type IndexExpr struct {
 	Name  string
 	Index Expr
+	Range Range
 }
 
-func (IndexExpr) isExpr() {}
+func (IndexExpr) isExpr()           {}
+func (e IndexExpr) Position() Range { return e.Range }
 
 type NumExpr struct {
 	Val   string
 	Value int
 	Ty    TTy
+	Range Range
 }
 
-func (NumExpr) isExpr() {}
+func (NumExpr) isExpr()           {}
+func (e NumExpr) Position() Range { return e.Range }
 
 type UnaryExpr struct {
-	Op   TTy
-	Expr Expr
+	Op    TTy
+	Expr  Expr
+	Range Range
 }
 
-func (UnaryExpr) isExpr() {}
+func (UnaryExpr) isExpr()           {}
+func (e UnaryExpr) Position() Range { return e.Range }
 
 type BinaryExpr struct {
-	Lhs Expr
-	Op  TTy
-	Rhs Expr
+	Lhs   Expr
+	Op    TTy
+	Rhs   Expr
+	Range Range
 }
 
-func (BinaryExpr) isExpr() {}
+func (BinaryExpr) isExpr()           {}
+func (e BinaryExpr) Position() Range { return e.Range }
 
 type PostfixExpr struct {
-	Expr Expr
-	Op   TTy
+	Expr  Expr
+	Op    TTy
+	Range Range
 }
 
-func (PostfixExpr) isExpr() {}
+func (PostfixExpr) isExpr()           {}
+func (e PostfixExpr) Position() Range { return e.Range }
 
 func Parse(tokens []Tok) (Program, error) {
 	p := newParser(tokens)
-	return p.parseProgram()
+	prog := p.parseProgram()
+	if len(p.diagnostics) > 0 {
+		return prog, p.diagnostics
+	}
+	return prog, nil
 }
 
 type parser struct {
-	toks []Tok
-	pos  int
+	toks        []Tok
+	pos         int
+	diagnostics DiagnosticList
 }
 
 func newParser(toks []Tok) *parser {
 	return &parser{toks: toks}
+}
+
+func (p *parser) error(msg string) {
+	p.diagnostics = append(p.diagnostics, Diagnostic{
+		Code:    ErrSyntax,
+		Message: msg,
+		Range:   p.current().Range,
+	})
 }
 
 func (p *parser) current() Tok {
@@ -227,16 +269,23 @@ func (p *parser) advance() {
 	p.pos++
 }
 
-func (p *parser) expect(ty TTy, formatter func(Tok) error) (Tok, error) {
+func (p *parser) expect(ty TTy, msg string) (Tok, bool) {
 	tok := p.current()
 	if tok.ty != ty {
-		return Tok{}, formatter(tok)
+		p.error(msg)
+		return Tok{}, false
 	}
 	p.pos++
-	return tok, nil
+	return tok, true
 }
 
-func (p *parser) parseProgram() (Program, error) {
+func (p *parser) synchronize() {
+	for p.current().ty != EOF && p.current().ty != SECTION {
+		p.advance()
+	}
+}
+
+func (p *parser) parseProgram() Program {
 	result := Program{
 		Functions:     []Function{},
 		AtBlocks:      []AtBlock{},
@@ -252,96 +301,84 @@ func (p *parser) parseProgram() (Program, error) {
 			switch p.current().ty {
 			case CONSTANTS:
 				p.advance()
-				if err := p.parseConstants(&result); err != nil {
-					return result, err
-				}
+				p.parseConstants(&result)
 			case CONFIGURATION:
 				p.advance()
-				if err := p.parseConfiguration(&result); err != nil {
-					return result, err
-				}
+				p.parseConfiguration(&result)
 			case DATA:
 				p.advance()
-				if err := p.parseData(&result); err != nil {
-					return result, err
-				}
+				p.parseData(&result)
 			case PROGRAM:
 				p.advance()
-				if err := p.parseFunctions(&result); err != nil {
-					return result, err
-				}
+				p.parseFunctions(&result)
 			default:
-				return result, fmt.Errorf("unknown section type: %s", p.current().String())
+				p.error("unknown section type")
+				p.synchronize()
 			}
 		} else {
-			return result, fmt.Errorf("unexpected token at top level: %v", p.current().String())
+			p.error("unexpected token at top level")
+			p.synchronize()
 		}
 	}
 
-	return result, nil
+	return result
 }
 
-func (p *parser) parseConfiguration(prog *Program) error {
+func (p *parser) parseConfiguration(prog *Program) {
 	for p.current().ty != EOF && p.current().ty != SECTION {
 		if p.current().ty == IDENT {
 			name := p.current().val
 			p.advance()
-			if _, err := p.expect(COLON, func(t Tok) error {
-				return fmt.Errorf("expected : after identifier %s", name)
-			}); err != nil {
-				return err
+			if _, ok := p.expect(COLON, fmt.Sprintf("expected : after identifier %s", name)); !ok {
+				continue
 			}
 
-			valExpr, err := p.parseExpr()
-			if err != nil {
-				return err
+			valExpr, ok := p.parseExpr()
+			if !ok {
+				continue
 			}
 			val, ok := valExpr.(NumExpr)
 			if !ok {
-				return fmt.Errorf("expected number value for configuration %s", name)
+				p.error(fmt.Sprintf("expected number value for configuration %s", name))
+				continue
 			}
 			prog.Configuration[name] = val.Value
 		} else {
-			return fmt.Errorf("unexpected token in configuration section: %s", p.current().String())
+			p.error(fmt.Sprintf("unexpected token in configuration section: %s", p.current().String()))
+			p.advance()
 		}
 	}
-	return nil
 }
 
-func (p *parser) parseConstants(prog *Program) error {
+func (p *parser) parseConstants(prog *Program) {
 	for p.current().ty != EOF && p.current().ty != SECTION {
 		if p.current().ty == IDENT {
-			if err := p.parseConstant(prog); err != nil {
-				return err
-			}
+			p.parseConstant(prog)
 		} else {
-			return fmt.Errorf("unexpected token in constants section: %s", p.current().String())
+			p.error(fmt.Sprintf("unexpected token in constants section: %s", p.current().String()))
+			p.advance()
 		}
 	}
-	return nil
 }
 
-func (p *parser) parseData(prog *Program) error {
+func (p *parser) parseData(prog *Program) {
 	banked := false // Default to common
 	for p.current().ty != EOF && p.current().ty != SECTION {
 		if p.current().ty == COMMON {
 			p.advance()
-			if _, err := p.expect(COLON, func(t Tok) error {
-				return fmt.Errorf("expected : after common")
-			}); err != nil {
-				return err
+			if _, ok := p.expect(COLON, "expected : after common"); !ok {
+				continue
 			}
 			banked = false
 		} else if p.current().ty == BANKED {
 			p.advance()
-			if _, err := p.expect(COLON, func(t Tok) error {
-				return fmt.Errorf("expected : after banked")
-			}); err != nil {
-				return err
+			if _, ok := p.expect(COLON, "expected : after banked"); !ok {
+				continue
 			}
 			banked = true
 		} else if p.current().ty == IDENT {
-			name := p.current().val
+			nameTok := p.current()
+			name := nameTok.val
 			p.advance()
 
 			if p.current().ty == I8 {
@@ -350,90 +387,99 @@ func (p *parser) parseData(prog *Program) error {
 					Name:   name,
 					Type:   "i8",
 					Banked: banked,
+					Range:  nameTok.Range,
 				}
 			} else {
-				return fmt.Errorf("expected type for variable %s, got %s", name, p.current().String())
+				p.error(fmt.Sprintf("expected type for variable %s, got %s", name, p.current().String()))
+				p.advance()
 			}
 		} else {
-			return fmt.Errorf("unexpected token in data section: %s", p.current().String())
+			p.error(fmt.Sprintf("unexpected token in data section: %s", p.current().String()))
+			p.advance()
 		}
 	}
-	return nil
 }
 
-func (p *parser) parseFunctions(prog *Program) error {
+func (p *parser) parseFunctions(prog *Program) {
 	for p.current().ty != EOF && p.current().ty != SECTION {
 		if p.current().ty == FN {
-			fn, err := p.parseFunction()
-			if err != nil {
-				return err
+			fn, ok := p.parseFunction()
+			if !ok {
+				// Skip to next function or section
+				for p.current().ty != EOF && p.current().ty != SECTION && p.current().ty != FN && p.current().ty != AT {
+					p.advance()
+				}
+				continue
 			}
 			prog.Functions = append(prog.Functions, fn)
 		} else if p.current().ty == AT {
-			blk, err := p.parseAtBlock()
-			if err != nil {
-				return err
+			blk, ok := p.parseAtBlock()
+			if !ok {
+				// Skip to next function or section
+				for p.current().ty != EOF && p.current().ty != SECTION && p.current().ty != FN && p.current().ty != AT {
+					p.advance()
+				}
+				continue
 			}
 			prog.AtBlocks = append(prog.AtBlocks, blk)
 		} else {
-			return fmt.Errorf("unexpected token in program section: %s", p.current().String())
+			p.error("unexpected token in program section")
+			p.advance()
 		}
 	}
-	return nil
 }
 
-func (p *parser) parseAtBlock() (AtBlock, error) {
+func (p *parser) parseAtBlock() (AtBlock, bool) {
+	start := p.current().Range.Start
 	p.advance() // eat AT
-	addrExpr, err := p.parseExpr()
-	if err != nil {
-		return AtBlock{}, err
+	addrExpr, ok := p.parseExpr()
+	if !ok {
+		return AtBlock{}, false
 	}
 	addr, ok := addrExpr.(NumExpr)
 	if !ok {
-		return AtBlock{}, fmt.Errorf("expected number address for at block")
+		p.error("expected number address for at block")
+		return AtBlock{}, false
 	}
 
-	if _, err := p.expect(BEGIN, func(t Tok) error {
-		return fmt.Errorf("expected begin after at address")
-	}); err != nil {
-		return AtBlock{}, err
+	if _, ok := p.expect(BEGIN, "expected begin after at address"); !ok {
+		return AtBlock{}, false
 	}
 
 	stmts := []Stmt{}
 	for p.current().ty != END && p.current().ty != EOF {
-		stmt, err := p.parseStmt()
-		if err != nil {
-			return AtBlock{}, err
+		stmt, ok := p.parseStmt()
+		if !ok {
+			p.advance()
+			continue
 		}
 		stmts = append(stmts, stmt)
 	}
 
-	if _, err := p.expect(END, func(t Tok) error {
-		return fmt.Errorf("expected end after at block")
-	}); err != nil {
-		return AtBlock{}, err
+	endTok, ok := p.expect(END, "expected end after at block")
+	if !ok {
+		return AtBlock{}, false
 	}
 
-	return AtBlock{Address: addr.Value, Body: stmts}, nil
+	return AtBlock{Address: addr.Value, Body: stmts, Range: Range{Start: start, End: endTok.Range.End}}, true
 }
 
-func (p *parser) parseConstant(prog *Program) error {
+func (p *parser) parseConstant(prog *Program) bool {
 	// Declaration: ident: value [ ... ]
 	name := p.current().val
 	p.advance()
-	if _, err := p.expect(COLON, func(t Tok) error {
-		return fmt.Errorf("expected : after identifier %s", name)
-	}); err != nil {
-		return err
+	if _, ok := p.expect(COLON, fmt.Sprintf("expected : after identifier %s", name)); !ok {
+		return false
 	}
 
-	valExpr, err := p.parseExpr()
-	if err != nil {
-		return err
+	valExpr, ok := p.parseExpr()
+	if !ok {
+		return false
 	}
 	val, ok := valExpr.(NumExpr)
 	if !ok {
-		return fmt.Errorf("expected number value for constant %s", name)
+		p.error(fmt.Sprintf("expected number value for constant %s", name))
+		return false
 	}
 
 	if p.current().ty == LBRACK {
@@ -441,24 +487,21 @@ func (p *parser) parseConstant(prog *Program) error {
 		p.advance()
 		bits := make(map[string]int)
 		for p.current().ty != RBRACK {
-			bitName, err := p.expect(IDENT, func(t Tok) error {
-				return fmt.Errorf("expected bit name")
-			})
-			if err != nil {
-				return err
+			bitName, ok := p.expect(IDENT, "expected bit name")
+			if !ok {
+				return false
 			}
-			if _, err := p.expect(COLON, func(t Tok) error {
-				return fmt.Errorf("expected : after bit name")
-			}); err != nil {
-				return err
+			if _, ok := p.expect(COLON, "expected : after bit name"); !ok {
+				return false
 			}
-			bitValExpr, err := p.parseExpr()
-			if err != nil {
-				return err
+			bitValExpr, ok := p.parseExpr()
+			if !ok {
+				return false
 			}
 			bitVal, ok := bitValExpr.(NumExpr)
 			if !ok {
-				return fmt.Errorf("expected number value for bit %s", bitName.val)
+				p.error(fmt.Sprintf("expected number value for bit %s", bitName.val))
+				return false
 			}
 			bits[bitName.val] = bitVal.Value
 		}
@@ -468,68 +511,71 @@ func (p *parser) parseConstant(prog *Program) error {
 		// Simple constant
 		prog.Consts[name] = val.Value
 	}
-	return nil
+	return true
 }
 
-func (p *parser) parseFunction() (Function, error) {
+func (p *parser) parseFunction() (Function, bool) {
 	// FN IDENT[name] LPAREN RPAREN BEGIN Stmt* END
 	// TODO: should probably require functions to have at least one stmt
 	result := Function{
 		Body: []Stmt{},
 	}
+	start := p.current().Range.Start
 
 	p.advance() // fn
 	name := p.current()
 	if name.ty != IDENT {
-		//lint:ignore ST1005 "I" must be capitalized
-		return result, fmt.Errorf("I can't allow a function to go through life with the name '%v'", name.String())
+		p.error(fmt.Sprintf("I can't allow a function to go through life with the name '%v'", name.String()))
+		return result, false
 	}
 	result.Name = name.val
 	p.advance()
 
-	if _, err := p.expect(LPAREN, func(t Tok) error {
-		return fmt.Errorf("a function name must be followed by '(', not '%s'. It's tradition", t.String())
-	}); err != nil {
-		return result, err
+	if _, ok := p.expect(LPAREN, fmt.Sprintf("a function name must be followed by '(', not '%s'. It's tradition", p.current().String())); !ok {
+		return result, false
 	}
-	if _, err := p.expect(RPAREN, func(t Tok) error {
-		return fmt.Errorf("we can't go on until you close that parenthesis with ')'. '%s' won't do", t.String())
-	}); err != nil {
-		return result, err
+	if _, ok := p.expect(RPAREN, fmt.Sprintf("we can't go on until you close that parenthesis with ')'. '%s' won't do", p.current().String())); !ok {
+		return result, false
 	}
 
-	if _, err := p.expect(BEGIN, func(t Tok) error {
-		//lint:ignore ST1005 silly message
-		return fmt.Errorf("who starts a function with '%v'!? I just sat down!", t.String())
-	}); err != nil {
-		return result, err
+	if _, ok := p.expect(BEGIN, fmt.Sprintf("who starts a function with '%v'!? I just sat down!", p.current().String())); !ok {
+		return result, false
 	}
 
 	for {
 		switch p.current().ty {
 		case EOF:
-			return result, fmt.Errorf("alas, functions must come to an END")
+			p.error("alas, functions must come to an END")
+			return result, false
 		case END:
+			result.Range = Range{Start: start, End: p.current().Range.End}
 			p.advance()
-			return result, nil
+			return result, true
 		default:
-			stmt, err := p.parseStmt()
-			if err != nil {
-				return result, err
+			stmt, ok := p.parseStmt()
+			if !ok {
+				// Skip to next statement or end
+				// Simple recovery: skip until semicolon (if we had them) or keyword
+				// For now, maybe just skip one token? Or skip until a statement start?
+				// Let's just skip one token for now to avoid infinite loops if we don't advance
+				p.advance()
+				continue
 			}
 			result.Body = append(result.Body, stmt)
 		}
 	}
 }
 
-func (p *parser) parseStmt() (Stmt, error) {
+func (p *parser) parseStmt() (Stmt, bool) {
 	switch p.current().ty {
 	case IDENT:
 		if p.peekNext().ty == COLON {
 			name := p.current().val
+			start := p.current().Range.Start
 			p.advance() // eat IDENT
+			end := p.current().Range.End
 			p.advance() // eat COLON
-			return LabelStmt{Name: name}, nil
+			return LabelStmt{Name: name, Range: Range{Start: start, End: end}}, true
 		}
 		if p.peekNext().ty == LPAREN {
 			return p.parseCallStmt()
@@ -540,56 +586,51 @@ func (p *parser) parseStmt() (Stmt, error) {
 	case IF:
 		return p.parseIfStmt()
 	default:
-		return nil, fmt.Errorf("unexpected token %s in statement", p.current().String())
+		p.error(fmt.Sprintf("unexpected token %s in statement", p.current().String()))
+		return nil, false
 	}
 }
 
-func (p *parser) parseIfStmt() (Stmt, error) {
+func (p *parser) parseIfStmt() (Stmt, bool) {
+	start := p.current().Range.Start
 	p.advance() // IF
-	cond, err := p.parseExpr()
-	if err != nil {
-		return nil, err
+	cond, ok := p.parseExpr()
+	if !ok {
+		return nil, false
 	}
 
-	_, err = p.expect(THEN, func(t Tok) error {
-		return fmt.Errorf("expected THEN, got %s", t.String())
-	})
-	if err != nil {
-		return nil, err
+	if _, ok := p.expect(THEN, fmt.Sprintf("expected THEN, got %s", p.current().String())); !ok {
+		return nil, false
 	}
 
-	stmt, err := p.parseStmt()
-	if err != nil {
-		return nil, err
+	stmt, ok := p.parseStmt()
+	if !ok {
+		return nil, false
 	}
 
-	return IfStmt{Cond: cond, Then: stmt}, nil
+	return IfStmt{Cond: cond, Then: stmt, Range: Range{Start: start, End: stmt.Position().End}}, true
 }
 
-func (p *parser) parseAssignStmt() (Stmt, error) {
+func (p *parser) parseAssignStmt() (Stmt, bool) {
 	// IDENT = Expr
-	name, err := p.expect(IDENT, func(t Tok) error {
-		return fmt.Errorf("expected identifier, got %s", t.String())
-	})
-	if err != nil {
-		return nil, err
+	name, ok := p.expect(IDENT, fmt.Sprintf("expected identifier, got %s", p.current().String()))
+	if !ok {
+		return nil, false
 	}
 
-	var lhs Expr = IdentExpr{Name: name.val}
+	var lhs Expr = IdentExpr{Name: name.val, Range: name.Range}
 
 	if p.current().ty == LBRACK {
 		p.advance()
-		idx, err := p.parseExpr()
-		if err != nil {
-			return nil, err
+		idx, ok := p.parseExpr()
+		if !ok {
+			return nil, false
 		}
-		_, err = p.expect(RBRACK, func(t Tok) error {
-			return fmt.Errorf("expected ], got %s", t.String())
-		})
-		if err != nil {
-			return nil, err
+		endTok, ok := p.expect(RBRACK, fmt.Sprintf("expected ], got %s", p.current().String()))
+		if !ok {
+			return nil, false
 		}
-		lhs = IndexExpr{Name: name.val, Index: idx}
+		lhs = IndexExpr{Name: name.val, Index: idx, Range: Range{Start: name.Range.Start, End: endTok.Range.End}}
 	}
 
 	op := p.current()
@@ -597,146 +638,151 @@ func (p *parser) parseAssignStmt() (Stmt, error) {
 	case EQL, ADDEQL, SUBEQL, ANDEQL, OREQL, XOREQL:
 		p.advance()
 	default:
-		return nil, fmt.Errorf("expected assignment operator, got %s", op.String())
+		p.error(fmt.Sprintf("expected assignment operator, got %s", op.String()))
+		return nil, false
 	}
 
-	expr, err := p.parseExpr()
-	if err != nil {
-		return nil, err
+	expr, ok := p.parseExpr()
+	if !ok {
+		return nil, false
 	}
 
 	return AssignStmt{
-		Lhs:  lhs,
-		Op:   op.ty,
-		Expr: expr,
-	}, nil
+		Lhs:   lhs,
+		Op:    op.ty,
+		Expr:  expr,
+		Range: Range{Start: lhs.Position().Start, End: expr.Position().End},
+	}, true
 }
 
-func (p *parser) parseCallStmt() (Stmt, error) {
-	name := p.current().val
+func (p *parser) parseCallStmt() (Stmt, bool) {
+	nameTok := p.current()
+	name := nameTok.val
 	p.advance() // eat IDENT
 	p.advance() // eat LPAREN
 
-	if _, err := p.expect(RPAREN, func(t Tok) error {
-		return fmt.Errorf("expected ) after call arguments")
-	}); err != nil {
-		return nil, err
+	endTok, ok := p.expect(RPAREN, "expected ) after call arguments")
+	if !ok {
+		return nil, false
 	}
-	return CallStmt{Name: name}, nil
+	return CallStmt{Name: name, Range: Range{Start: nameTok.Range.Start, End: endTok.Range.End}}, true
 }
 
-func (p *parser) parseReturnStmt() (Stmt, error) {
+func (p *parser) parseReturnStmt() (Stmt, bool) {
 	// RETURN
+	tok := p.current()
 	p.advance()
-	return ReturnStmt{}, nil
+	return ReturnStmt{Range: tok.Range}, true
 }
 
-func (p *parser) parseExpr() (Expr, error) {
+func (p *parser) parseExpr() (Expr, bool) {
 	return p.parseBinaryExpr()
 }
 
-func (p *parser) parseBinaryExpr() (Expr, error) {
-	lhs, err := p.parseUnaryExpr()
-	if err != nil {
-		return nil, err
+func (p *parser) parseBinaryExpr() (Expr, bool) {
+	lhs, ok := p.parseUnaryExpr()
+	if !ok {
+		return nil, false
 	}
 
 	for p.current().ty == NEQ {
-		op := p.current().ty
+		opTok := p.current()
+		op := opTok.ty
 		p.advance()
-		rhs, err := p.parseUnaryExpr()
-		if err != nil {
-			return nil, err
+		rhs, ok := p.parseUnaryExpr()
+		if !ok {
+			return nil, false
 		}
-		lhs = BinaryExpr{Lhs: lhs, Op: op, Rhs: rhs}
+		lhs = BinaryExpr{Lhs: lhs, Op: op, Rhs: rhs, Range: Range{Start: lhs.Position().Start, End: rhs.Position().End}}
 	}
-	return lhs, nil
+	return lhs, true
 }
 
-func (p *parser) parseUnaryExpr() (Expr, error) {
+func (p *parser) parseUnaryExpr() (Expr, bool) {
 	if p.current().ty == NOT {
-		op := p.current().ty
+		opTok := p.current()
+		op := opTok.ty
 		p.advance()
-		expr, err := p.parseUnaryExpr()
-		if err != nil {
-			return nil, err
+		expr, ok := p.parseUnaryExpr()
+		if !ok {
+			return nil, false
 		}
-		return UnaryExpr{Op: op, Expr: expr}, nil
+		return UnaryExpr{Op: op, Expr: expr, Range: Range{Start: opTok.Range.Start, End: expr.Position().End}}, true
 	}
 	return p.parsePostfixExpr()
 }
 
-func (p *parser) parsePostfixExpr() (Expr, error) {
-	lhs, err := p.parsePrimaryExpr()
-	if err != nil {
-		return nil, err
+func (p *parser) parsePostfixExpr() (Expr, bool) {
+	lhs, ok := p.parsePrimaryExpr()
+	if !ok {
+		return nil, false
 	}
 
 	for {
 		switch p.current().ty {
 		case INC, DEC:
-			op := p.current().ty
+			opTok := p.current()
+			op := opTok.ty
 			p.advance()
-			lhs = PostfixExpr{Expr: lhs, Op: op}
+			lhs = PostfixExpr{Expr: lhs, Op: op, Range: Range{Start: lhs.Position().Start, End: opTok.Range.End}}
 		case LBRACK:
 			if _, ok := lhs.(IdentExpr); !ok {
 				// Indexing only supported on identifiers.
 				// If we see a bracket after something else (like a number),
 				// it's not part of the expression.
-				return lhs, nil
+				return lhs, true
 			}
 			p.advance()
-			idx, err := p.parseExpr()
-			if err != nil {
-				return nil, err
+			idx, ok := p.parseExpr()
+			if !ok {
+				return nil, false
 			}
-			_, err = p.expect(RBRACK, func(t Tok) error {
-				return fmt.Errorf("expected ], got %s", t.String())
-			})
-			if err != nil {
-				return nil, err
+			endTok, ok := p.expect(RBRACK, fmt.Sprintf("expected ], got %s", p.current().String()))
+			if !ok {
+				return nil, false
 			}
 			if id, ok := lhs.(IdentExpr); ok {
-				lhs = IndexExpr{Name: id.Name, Index: idx}
+				lhs = IndexExpr{Name: id.Name, Index: idx, Range: Range{Start: id.Range.Start, End: endTok.Range.End}}
 			} else {
 				// Should be unreachable due to check above
-				return nil, fmt.Errorf("indexing only supported on identifiers")
+				p.error("indexing only supported on identifiers")
+				return nil, false
 			}
 		default:
-			return lhs, nil
+			return lhs, true
 		}
 	}
 }
 
-func (p *parser) parsePrimaryExpr() (Expr, error) {
+func (p *parser) parsePrimaryExpr() (Expr, bool) {
 	tok := p.current()
 	if tok.ty >= NUM_First && tok.ty <= NUM_Last {
-		p.advance()
 		val, err := tok.Number()
 		if err != nil {
-			return nil, fmt.Errorf("invalid number %q: %w", tok.val, err)
+			p.error(fmt.Sprintf("invalid number %q: %v", tok.val, err))
+			return nil, false
 		}
-		return NumExpr{Val: tok.val, Value: val, Ty: tok.ty}, nil
+		p.advance()
+		return NumExpr{Val: tok.val, Value: val, Ty: tok.ty, Range: tok.Range}, true
 	}
 	switch tok.ty {
 	case IDENT:
 		p.advance()
-		return IdentExpr{Name: tok.val}, nil
+		return IdentExpr{Name: tok.val, Range: tok.Range}, true
 	case LPAREN:
 		p.advance()
-		expr, err := p.parseExpr()
-		if err != nil {
-			return nil, err
+		expr, ok := p.parseExpr()
+		if !ok {
+			return nil, false
 		}
-		_, err = p.expect(RPAREN, func(t Tok) error {
-			return fmt.Errorf("expected ), got %s", t.String())
-		})
-		if err != nil {
-			return nil, err
+		_, ok = p.expect(RPAREN, fmt.Sprintf("expected ), got %s", p.current().String()))
+		if !ok {
+			return nil, false
 		}
-		return expr, nil
+		return expr, true
 	default:
-		return nil, fmt.Errorf("unexpected token %s in expression", p.current().String())
+		p.error(fmt.Sprintf("unexpected token %s in expression", p.current().String()))
+		return nil, false
 	}
 }
 

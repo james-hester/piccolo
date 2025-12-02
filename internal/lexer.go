@@ -66,8 +66,9 @@ const (
 )
 
 type Tok struct {
-	ty  TTy
-	val string
+	ty    TTy
+	val   string
+	Range Range
 }
 
 func (tok *Tok) Number() (int, error) {
@@ -114,10 +115,12 @@ var keywords = map[string]TTy{
 
 func Lex(text string) ([]Tok, error) {
 	result := []Tok{}
+	var diagnostics DiagnosticList
 	l := newLexer(text)
 
 	for {
 		l.skipWhitespace()
+		l.startTok()
 		if l.peek() == 0 {
 			break
 		}
@@ -129,81 +132,122 @@ func Lex(text string) ([]Tok, error) {
 		}
 
 		if op, ok := l.tryTwoCharOp(); ok {
-			result = append(result, Tok{ty: op})
+			result = append(result, l.finishTok(op))
 			continue
 		}
 
 		switch l.peek() {
 		case '$':
-			result = append(result, Tok{ty: NUMHEX, val: l.scanHex()})
+			result = append(result, l.finishTokVal(NUMHEX, l.scanHex()))
 			continue
 		case '%':
-			result = append(result, Tok{ty: NUMBINARY, val: l.scanBinary()})
+			result = append(result, l.finishTokVal(NUMBINARY, l.scanBinary()))
 			continue
 		case '=':
 			l.advance()
-			result = append(result, Tok{ty: EQL})
+			result = append(result, l.finishTok(EQL))
 			continue
 		case '[':
 			l.advance()
-			result = append(result, Tok{ty: LBRACK})
+			result = append(result, l.finishTok(LBRACK))
 			continue
 		case ']':
 			l.advance()
-			result = append(result, Tok{ty: RBRACK})
+			result = append(result, l.finishTok(RBRACK))
 			continue
 		case '(':
 			l.advance()
-			result = append(result, Tok{ty: LPAREN})
+			result = append(result, l.finishTok(LPAREN))
 			continue
 		case ')':
 			l.advance()
-			result = append(result, Tok{ty: RPAREN})
+			result = append(result, l.finishTok(RPAREN))
 			continue
 		case ':':
 			l.advance()
-			result = append(result, Tok{ty: COLON})
+			result = append(result, l.finishTok(COLON))
 			continue
 		case '-':
 			l.advance()
-			result = append(result, Tok{ty: MINUS})
+			result = append(result, l.finishTok(MINUS))
 			continue
 		}
 
 		if unicode.IsDigit(l.peek()) {
-			result = append(result, Tok{ty: NUMDECIMAL, val: l.scanDecimal()})
+			result = append(result, l.finishTokVal(NUMDECIMAL, l.scanDecimal()))
 			continue
 		}
 
 		if isIdentStart(l.peek()) {
 			ident := l.scanIdent()
 			if kw, ok := keywords[strings.ToLower(ident)]; ok {
-				result = append(result, Tok{ty: kw})
+				result = append(result, l.finishTok(kw))
 			} else {
-				result = append(result, Tok{ty: IDENT, val: ident})
+				result = append(result, l.finishTokVal(IDENT, ident))
 			}
 			continue
 		}
 
-		return nil, fmt.Errorf("unexpected character %q on line %d", l.peek(), l.line)
+		// Error case
+		diagnostics = append(diagnostics, Diagnostic{
+			Code:    ErrSyntax,
+			Message: fmt.Sprintf("unexpected character %q", l.peek()),
+			Range:   l.currentRange(),
+		})
+		l.advance() // Skip the bad char
 	}
 
-	result = append(result, Tok{ty: EOF})
+	l.startTok()
+	result = append(result, l.finishTok(EOF))
+
+	if len(diagnostics) > 0 {
+		return result, diagnostics
+	}
 	return result, nil
 }
 
 // lexer is a minimal rune-based scanner for Piccolo source.
 type lexer struct {
-	src  []rune
-	pos  int
-	line int
+	src   []rune
+	pos   int
+	line  int
+	col   int
+	start Position
 }
 
 func newLexer(input string) *lexer {
 	return &lexer{
 		src:  []rune(input),
 		line: 1,
+		col:  1,
 	}
+}
+
+func (l *lexer) startTok() {
+	l.start = l.position()
+}
+
+func (l *lexer) finishTok(ty TTy) Tok {
+	return Tok{
+		ty:    ty,
+		Range: l.currentRange(),
+	}
+}
+
+func (l *lexer) finishTokVal(ty TTy, val string) Tok {
+	return Tok{
+		ty:    ty,
+		val:   val,
+		Range: l.currentRange(),
+	}
+}
+
+func (l *lexer) currentRange() Range {
+	return Range{Start: l.start, End: l.position()}
+}
+
+func (l *lexer) position() Position {
+	return Position{Line: l.line, Col: l.col}
 }
 
 func (l *lexer) peek() rune {
@@ -228,6 +272,9 @@ func (l *lexer) advance() rune {
 	l.pos++
 	if r == '\n' {
 		l.line++
+		l.col = 1
+	} else {
+		l.col++
 	}
 	return r
 }
@@ -259,6 +306,7 @@ func (l *lexer) scanIdent() string {
 	trim := strings.TrimRight(s, "-")
 	diff := len(s) - len(trim)
 	l.pos -= diff
+	l.col -= diff
 	return trim
 }
 
